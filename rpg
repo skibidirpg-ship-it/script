@@ -462,8 +462,8 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	
 	-- Color wheel popup
 	local colorWheel = Instance.new("Frame")
-	colorWheel.Size = UDim2.new(0, 220, 0, 250)
-	colorWheel.Position = UDim2.new(0.5, -110, 0.5, -125)
+	colorWheel.Size = UDim2.new(0, 280, 0, 380)
+	colorWheel.Position = UDim2.new(0.5, -140, 0.5, -190)
 	colorWheel.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 	colorWheel.BorderSizePixel = 0
 	colorWheel.Visible = false
@@ -502,62 +502,265 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	closeWheelBtn.ZIndex = 51
 	closeWheelBtn.Parent = colorWheel
 	
-	-- Preset colors (cleaner layout)
-	local presetColors = {
-		Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 128, 0), Color3.fromRGB(255, 255, 0),
-		Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 255, 255), Color3.fromRGB(0, 128, 255),
-		Color3.fromRGB(128, 0, 255), Color3.fromRGB(255, 0, 255), Color3.fromRGB(255, 255, 255)
-	}
+	-- Current RGB values
+	local currentR, currentG, currentB = math.floor(defaultColor.R * 255), math.floor(defaultColor.G * 255), math.floor(defaultColor.B * 255)
 	
-	for i, color in ipairs(presetColors) do
-		local colorBtn = Instance.new("TextButton")
-		colorBtn.Size = UDim2.new(0, 56, 0, 50)
-		colorBtn.Position = UDim2.new(0, 15 + ((i - 1) % 3) * 65, 0, 50 + math.floor((i - 1) / 3) * 60)
-		colorBtn.BackgroundColor3 = color
-		colorBtn.BorderSizePixel = 0
-		colorBtn.Text = ""
-		colorBtn.ZIndex = 51
-		colorBtn.Parent = colorWheel
+	-- Circular hue wheel
+	local hueWheelSize = 140
+	local hueWheelContainer = Instance.new("Frame")
+	hueWheelContainer.Size = UDim2.new(0, hueWheelSize, 0, hueWheelSize)
+	hueWheelContainer.Position = UDim2.new(0.5, -hueWheelSize/2, 0, 50)
+	hueWheelContainer.BackgroundTransparency = 1
+	hueWheelContainer.ZIndex = 51
+	hueWheelContainer.Parent = colorWheel
+	
+	-- Create circular hue wheel with segments
+	for i = 0, 359, 3 do
+		local hue = i / 360
+		local color = Color3.fromHSV(hue, 1, 1)
+		
+		local segment = Instance.new("Frame")
+		segment.Size = UDim2.new(0, hueWheelSize, 0, 3)
+		segment.Position = UDim2.new(0.5, 0, 0.5, 0)
+		segment.AnchorPoint = Vector2.new(0, 0.5)
+		segment.BackgroundColor3 = color
+		segment.BorderSizePixel = 0
+		segment.Rotation = i
+		segment.ZIndex = 51
+		segment.Parent = hueWheelContainer
+		
+		local gradient = Instance.new("UIGradient")
+		gradient.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0),
+			NumberSequenceKeypoint.new(1, 0)
+		}
+		gradient.Parent = segment
+	end
+	
+	-- Hue wheel button overlay
+	local hueButton = Instance.new("TextButton")
+	hueButton.Size = UDim2.new(1, 0, 1, 0)
+	hueButton.BackgroundTransparency = 1
+	hueButton.Text = ""
+	hueButton.ZIndex = 52
+	hueButton.Parent = hueWheelContainer
+	
+	-- RGB Sliders
+	local function createRGBSlider(colorName, yPos, defaultVal, updateCallback)
+		local sliderFrame = Instance.new("Frame")
+		sliderFrame.Size = UDim2.new(1, -30, 0, 30)
+		sliderFrame.Position = UDim2.new(0, 15, 0, yPos)
+		sliderFrame.BackgroundTransparency = 1
+		sliderFrame.ZIndex = 51
+		sliderFrame.Parent = colorWheel
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0, 30, 1, 0)
+		label.BackgroundTransparency = 1
+		label.Text = colorName
+		label.TextColor3 = Color3.fromRGB(240, 240, 245)
+		label.TextSize = 12
+		label.Font = Enum.Font.GothamBold
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.ZIndex = 51
+		label.Parent = sliderFrame
+		
+		local valueLabel = Instance.new("TextLabel")
+		valueLabel.Size = UDim2.new(0, 40, 1, 0)
+		valueLabel.Position = UDim2.new(1, -40, 0, 0)
+		valueLabel.BackgroundTransparency = 1
+		valueLabel.Text = tostring(defaultVal)
+		valueLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
+		valueLabel.TextSize = 11
+		valueLabel.Font = Enum.Font.Gotham
+		valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+		valueLabel.ZIndex = 51
+		valueLabel.Parent = sliderFrame
+		
+		local sliderBg = Instance.new("Frame")
+		sliderBg.Size = UDim2.new(1, -80, 0, 8)
+		sliderBg.Position = UDim2.new(0, 35, 0.5, -4)
+		sliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+		sliderBg.BorderSizePixel = 0
+		sliderBg.ZIndex = 51
+		sliderBg.Parent = sliderFrame
+		
+		local sliderCorner = Instance.new("UICorner")
+		sliderCorner.CornerRadius = UDim.new(1, 0)
+		sliderCorner.Parent = sliderBg
+		
+		-- Color gradient for slider
+		local sliderGradient = Instance.new("UIGradient")
+		if colorName == "R" then
+			sliderGradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(0, currentG, currentB)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(255, currentG, currentB))
+			}
+		elseif colorName == "G" then
+			sliderGradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, 0, currentB)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, 255, currentB))
+			}
+		else
+			sliderGradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, currentG, 0)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, currentG, 255))
+			}
+		end
+		sliderGradient.Parent = sliderBg
+		
+		local sliderButton = Instance.new("TextButton")
+		sliderButton.Size = UDim2.new(0, 14, 0, 14)
+		sliderButton.Position = UDim2.new(defaultVal / 255, -7, 0.5, -7)
+		sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		sliderButton.BorderSizePixel = 0
+		sliderButton.Text = ""
+		sliderButton.ZIndex = 52
+		sliderButton.Parent = sliderBg
 		
 		local btnCorner = Instance.new("UICorner")
-		btnCorner.CornerRadius = UDim.new(0, 8)
-		btnCorner.Parent = colorBtn
+		btnCorner.CornerRadius = UDim.new(1, 0)
+		btnCorner.Parent = sliderButton
 		
 		local btnStroke = Instance.new("UIStroke")
-		btnStroke.Color = Color3.fromRGB(80, 80, 90)
+		btnStroke.Color = Color3.fromRGB(138, 43, 226)
 		btnStroke.Thickness = 2
-		btnStroke.Parent = colorBtn
+		btnStroke.Parent = sliderButton
 		
-		local conn = colorBtn.MouseButton1Click:Connect(function()
-			colorPreview.BackgroundColor3 = color
-			if callback then callback(color) end
-			TweenService:Create(colorWheel, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
-			task.wait(0.2)
-			colorWheel.Visible = false
-			colorWheel.Size = UDim2.new(0, 220, 0, 250)
-		end)
-		table.insert(connections, conn)
+		local draggingSlider = false
 		
-		colorBtn.MouseEnter:Connect(function()
-			TweenService:Create(colorBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 60, 0, 54)}):Play()
-		end)
+		local function updateSlider(input)
+			local relativeX = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+			local value = math.floor(relativeX * 255)
+			valueLabel.Text = tostring(value)
+			sliderButton.Position = UDim2.new(relativeX, -7, 0.5, -7)
+			
+			if colorName == "R" then
+				currentR = value
+				sliderGradient.Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(0, currentG, currentB)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(255, currentG, currentB))
+				}
+			elseif colorName == "G" then
+				currentG = value
+				sliderGradient.Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, 0, currentB)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, 255, currentB))
+				}
+			else
+				currentB = value
+				sliderGradient.Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, currentG, 0)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, currentG, 255))
+				}
+			end
+			
+			if updateCallback then
+				updateCallback(currentR, currentG, currentB)
+			end
+		end
 		
-		colorBtn.MouseLeave:Connect(function()
-			TweenService:Create(colorBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 56, 0, 50)}):Play()
+		local conn1 = sliderButton.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				draggingSlider = true
+			end
 		end)
+		table.insert(connections, conn1)
+		
+		local conn2 = sliderButton.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				draggingSlider = false
+			end
+		end)
+		table.insert(connections, conn2)
+		
+		local conn3 = sliderBg.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				draggingSlider = true
+				updateSlider(input)
+			end
+		end)
+		table.insert(connections, conn3)
+		
+		local conn4 = UserInputService.InputChanged:Connect(function(input)
+			if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+				updateSlider(input)
+			end
+		end)
+		table.insert(connections, conn4)
+		
+		local conn5 = UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				draggingSlider = false
+			end
+		end)
+		table.insert(connections, conn5)
+		
+		return sliderGradient
 	end
+	
+	-- Update preview and callback
+	local function updateColorPreview()
+		local newColor = Color3.fromRGB(currentR, currentG, currentB)
+		colorPreview.BackgroundColor3 = newColor
+		if callback then callback(newColor) end
+	end
+	
+	local rGradient = createRGBSlider("R", 210, currentR, updateColorPreview)
+	local gGradient = createRGBSlider("G", 250, currentG, updateColorPreview)
+	local bGradient = createRGBSlider("B", 290, currentB, updateColorPreview)
+	
+	-- Hue wheel click handler
+	local conn = hueButton.MouseButton1Click:Connect(function()
+		local mousePos = UserInputService:GetMouseLocation()
+		local centerX = hueWheelContainer.AbsolutePosition.X + hueWheelSize / 2
+		local centerY = hueWheelContainer.AbsolutePosition.Y + hueWheelSize / 2
+		
+		local deltaX = mousePos.X - centerX
+		local deltaY = mousePos.Y - centerY
+		local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
+		
+		-- Only respond if clicked within outer ring
+		if distance > hueWheelSize / 4 and distance < hueWheelSize / 2 then
+			local angle = math.atan2(deltaY, deltaX)
+			local hue = (math.deg(angle) + 360) % 360 / 360
+			local selectedColor = Color3.fromHSV(hue, 1, 1)
+			
+			currentR = math.floor(selectedColor.R * 255)
+			currentG = math.floor(selectedColor.G * 255)
+			currentB = math.floor(selectedColor.B * 255)
+			
+			-- Update all gradients
+			rGradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(0, currentG, currentB)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(255, currentG, currentB))
+			}
+			gGradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, 0, currentB)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, 255, currentB))
+			}
+			bGradient.Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, currentG, 0)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, currentG, 255))
+			}
+			
+			updateColorPreview()
+		end
+	end)
+	table.insert(connections, conn)
 	
 	local conn1 = colorButton.MouseButton1Click:Connect(function()
 		if not colorWheel.Visible then
 			colorWheel.Visible = true
 			colorWheel.Size = UDim2.new(0, 0, 0, 0)
 			TweenService:Create(colorWheel, TweenInfo.new(0.3, Enum.EasingStyle.Back), 
-				{Size = UDim2.new(0, 220, 0, 250)}):Play()
+				{Size = UDim2.new(0, 280, 0, 380)}):Play()
 		else
 			TweenService:Create(colorWheel, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
 			task.wait(0.2)
 			colorWheel.Visible = false
-			colorWheel.Size = UDim2.new(0, 220, 0, 250)
+			colorWheel.Size = UDim2.new(0, 280, 0, 380)
 		end
 	end)
 	table.insert(connections, conn1)
@@ -566,7 +769,7 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		TweenService:Create(colorWheel, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
 		task.wait(0.2)
 		colorWheel.Visible = false
-		colorWheel.Size = UDim2.new(0, 220, 0, 250)
+		colorWheel.Size = UDim2.new(0, 280, 0, 380)
 	end)
 	table.insert(connections, conn2)
 	
