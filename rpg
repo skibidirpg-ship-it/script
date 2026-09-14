@@ -781,14 +781,50 @@ createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
 	catMouseEnabled = enabled
 	
 	if enabled then
-		-- Create custom cursor GUI
-		catCursorGui = Instance.new("ImageLabel")
+		-- Create custom cursor GUI with animated effect
+		catCursorGui = Instance.new("Frame")
 		catCursorGui.Name = "CatCursor"
-		catCursorGui.Size = UDim2.new(0, 64, 0, 64)
-		catCursorGui.BackgroundTransparency = 1
-		catCursorGui.Image = "https://cdn.discordapp.com/attachments/1432976966876925966/1458576267631661066/968DEC4B-F07E-4179-8719-C3295CA89EA6.gif"
+		catCursorGui.Size = UDim2.new(0, 48, 0, 48)
+		catCursorGui.BackgroundColor3 = Color3.fromRGB(255, 150, 200)
+		catCursorGui.BorderSizePixel = 0
 		catCursorGui.ZIndex = 1000
 		catCursorGui.Parent = screenGui
+		
+		local cursorCorner = Instance.new("UICorner")
+		cursorCorner.CornerRadius = UDim.new(1, 0)
+		cursorCorner.Parent = catCursorGui
+		
+		-- Cat emoji as placeholder
+		local catEmoji = Instance.new("TextLabel")
+		catEmoji.Size = UDim2.new(1, 0, 1, 0)
+		catEmoji.BackgroundTransparency = 1
+		catEmoji.Text = "🐱"
+		catEmoji.TextSize = 32
+		catEmoji.ZIndex = 1001
+		catEmoji.Parent = catCursorGui
+		
+		-- Glow effect
+		local glow = Instance.new("UIStroke")
+		glow.Color = Color3.fromRGB(255, 100, 200)
+		glow.Thickness = 3
+		glow.Transparency = 0.5
+		glow.Parent = catCursorGui
+		
+		-- Animate glow
+		task.spawn(function()
+			while catCursorGui and catMouseEnabled do
+				for i = 0.3, 0.7, 0.05 do
+					if not catCursorGui then break end
+					glow.Transparency = i
+					task.wait(0.05)
+				end
+				for i = 0.7, 0.3, -0.05 do
+					if not catCursorGui then break end
+					glow.Transparency = i
+					task.wait(0.05)
+				end
+			end
+		end)
 		
 		-- Hide default cursor
 		UserInputService.MouseIconEnabled = false
@@ -797,7 +833,7 @@ createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
 		catCursorConnection = RunService.RenderStepped:Connect(function()
 			if catCursorGui and catMouseEnabled then
 				local mousePos = UserInputService:GetMouseLocation()
-				catCursorGui.Position = UDim2.new(0, mousePos.X - 32, 0, mousePos.Y - 32)
+				catCursorGui.Position = UDim2.new(0, mousePos.X - 24, 0, mousePos.Y - 24)
 			end
 		end)
 		
