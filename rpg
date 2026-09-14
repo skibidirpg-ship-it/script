@@ -232,7 +232,7 @@ tabBar.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
 tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
 
-local tabs = {"Visuals", "Settings"}
+local tabs = {"Visuals", "Mouse", "Settings"}
 local currentTab = "Visuals"
 local tabButtons = {}
 local tabWidth = 280 / #tabs
@@ -769,6 +769,57 @@ createColorPicker(visualsContent, "Tracer Color", tracerColor, function(color)
 		end
 	end
 end)
+
+-- Mouse Tab
+local mouseContent = createTabContent("Mouse")
+
+local catMouseEnabled = false
+local catMouseIcon = "rbxassetid://0" -- Will be set to the gif URL
+
+createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
+	catMouseEnabled = enabled
+	
+	if enabled then
+		-- Change mouse cursor to cat gif
+		local mouse = player:GetMouse()
+		mouse.Icon = "https://cdn.discordapp.com/attachments/1432976966876925966/1458576267631661066/968DEC4B-F07E-4179-8719-C3295CA89EA6.gif?ex=6aa86a01&is=6aa71881&hm=7f6b97b133584bc7c1d861c1ec1581e5b68e3b4a6ab91c746d07fb489ec61918&"
+		print("Cat Mouse enabled!")
+	else
+		-- Reset to default cursor
+		local mouse = player:GetMouse()
+		mouse.Icon = ""
+		print("Cat Mouse disabled!")
+	end
+end)
+
+local catMouseInfo = Instance.new("TextLabel")
+catMouseInfo.Size = UDim2.new(1, -10, 0, 50)
+catMouseInfo.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+catMouseInfo.BorderSizePixel = 0
+catMouseInfo.Text = "🐱 Changes your cursor to a cute cat animation!"
+catMouseInfo.TextColor3 = Color3.fromRGB(200, 200, 210)
+catMouseInfo.TextSize = 10
+catMouseInfo.Font = Enum.Font.Gotham
+catMouseInfo.TextWrapped = true
+catMouseInfo.TextYAlignment = Enum.TextYAlignment.Top
+catMouseInfo.Parent = mouseContent
+
+local mouseInfoCorner = Instance.new("UICorner")
+mouseInfoCorner.CornerRadius = UDim.new(0, 8)
+mouseInfoCorner.Parent = catMouseInfo
+
+local mouseInfoStroke = Instance.new("UIStroke")
+mouseInfoStroke.Color = Color3.fromRGB(50, 50, 60)
+mouseInfoStroke.Thickness = 1
+mouseInfoStroke.Transparency = 0.5
+mouseInfoStroke.Parent = catMouseInfo
+
+local mouseInfoPadding = Instance.new("UIPadding")
+mouseInfoPadding.PaddingTop = UDim.new(0, 10)
+mouseInfoPadding.PaddingLeft = UDim.new(0, 10)
+mouseInfoPadding.PaddingRight = UDim.new(0, 10)
+mouseInfoPadding.PaddingBottom = UDim.new(0, 10)
+mouseInfoPadding.Parent = catMouseInfo
 
 -- Settings Tab
 local settingsContent = createTabContent("Settings")
