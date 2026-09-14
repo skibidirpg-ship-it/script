@@ -777,52 +777,36 @@ local catMouseEnabled = false
 local catCursorGui = nil
 local catCursorConnection = nil
 
-createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
+createToggle(mouseContent, "Spinning Star Cursor", catMouseEnabled, function(enabled)
 	catMouseEnabled = enabled
 	
 	if enabled then
-		-- Create custom cursor GUI with animated effect
+		-- Create custom cursor GUI with spinning star
 		catCursorGui = Instance.new("Frame")
-		catCursorGui.Name = "CatCursor"
+		catCursorGui.Name = "StarCursor"
 		catCursorGui.Size = UDim2.new(0, 48, 0, 48)
-		catCursorGui.BackgroundColor3 = Color3.fromRGB(255, 150, 200)
+		catCursorGui.BackgroundTransparency = 1
 		catCursorGui.BorderSizePixel = 0
 		catCursorGui.ZIndex = 1000
 		catCursorGui.Parent = screenGui
 		
-		local cursorCorner = Instance.new("UICorner")
-		cursorCorner.CornerRadius = UDim.new(1, 0)
-		cursorCorner.Parent = catCursorGui
+		-- Star emoji
+		local starEmoji = Instance.new("TextLabel")
+		starEmoji.Size = UDim2.new(1, 0, 1, 0)
+		starEmoji.BackgroundTransparency = 1
+		starEmoji.Text = "⭐"
+		starEmoji.TextSize = 48
+		starEmoji.ZIndex = 1001
+		starEmoji.Parent = catCursorGui
 		
-		-- Cat emoji as placeholder
-		local catEmoji = Instance.new("TextLabel")
-		catEmoji.Size = UDim2.new(1, 0, 1, 0)
-		catEmoji.BackgroundTransparency = 1
-		catEmoji.Text = "🐱"
-		catEmoji.TextSize = 32
-		catEmoji.ZIndex = 1001
-		catEmoji.Parent = catCursorGui
-		
-		-- Glow effect
-		local glow = Instance.new("UIStroke")
-		glow.Color = Color3.fromRGB(255, 100, 200)
-		glow.Thickness = 3
-		glow.Transparency = 0.5
-		glow.Parent = catCursorGui
-		
-		-- Animate glow
+		-- Animate spinning
 		task.spawn(function()
+			local rotation = 0
 			while catCursorGui and catMouseEnabled do
-				for i = 0.3, 0.7, 0.05 do
-					if not catCursorGui then break end
-					glow.Transparency = i
-					task.wait(0.05)
-				end
-				for i = 0.7, 0.3, -0.05 do
-					if not catCursorGui then break end
-					glow.Transparency = i
-					task.wait(0.05)
-				end
+				rotation = rotation + 5
+				if rotation >= 360 then rotation = 0 end
+				starEmoji.Rotation = rotation
+				task.wait(0.03)
 			end
 		end)
 		
@@ -838,7 +822,7 @@ createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
 		end)
 		
 		table.insert(connections, catCursorConnection)
-		print("Cat Mouse enabled!")
+		print("Spinning Star Cursor enabled!")
 	else
 		-- Remove custom cursor
 		if catCursorGui then
@@ -854,7 +838,7 @@ createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
 		
 		-- Show default cursor
 		UserInputService.MouseIconEnabled = true
-		print("Cat Mouse disabled!")
+		print("Spinning Star Cursor disabled!")
 	end
 end)
 
@@ -862,7 +846,7 @@ local catMouseInfo = Instance.new("TextLabel")
 catMouseInfo.Size = UDim2.new(1, -10, 0, 50)
 catMouseInfo.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 catMouseInfo.BorderSizePixel = 0
-catMouseInfo.Text = "🐱 Changes your cursor to a cute cat animation!"
+catMouseInfo.Text = "⭐ Changes your cursor to a spinning star!"
 catMouseInfo.TextColor3 = Color3.fromRGB(200, 200, 210)
 catMouseInfo.TextSize = 10
 catMouseInfo.Font = Enum.Font.Gotham
