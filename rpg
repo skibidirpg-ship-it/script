@@ -261,10 +261,27 @@ local function updateESP()
 			local character = targetPlayer.Character
 			local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 			local humanoid = character:FindFirstChild("Humanoid")
+			local head = character:FindFirstChild("Head")
 			
-			if humanoidRootPart and humanoid and humanoid.Health > 0 then
-				local position = humanoidRootPart.Position
-				local screenPos, onScreen = worldToScreen(position)
+			if humanoidRootPart and humanoid and humanoid.Health > 0 and head then
+				-- Calculate the 3D bounding box corners
+				local hrpPosition = humanoidRootPart.Position
+				local headPosition = head.Position
+				
+				-- Get the distance for proper scaling
+				local distance = (camera.CFrame.Position - hrpPosition).Magnitude
+				local scaleFactor = 1 / distance * 100 -- Adjust this multiplier for size
+				
+				-- Calculate actual character bounds
+				local topPosition = headPosition + Vector3.new(0, 0.5, 0)
+				local bottomPosition = hrpPosition - Vector3.new(0, 3, 0)
+				
+				-- Convert to screen space
+				local topScreenPos, topOnScreen, topDepth = worldToScreen(topPosition)
+				local bottomScreenPos, bottomOnScreen, bottomDepth = worldToScreen(bottomPosition)
+				local centerScreenPos, centerOnScreen = worldToScreen(hrpPosition)
+				
+				local onScreen = topOnScreen and bottomOnScreen and topDepth > 0 and bottomDepth > 0
 				
 				-- Update Tracer
 				if tracersEnabled then
@@ -275,7 +292,7 @@ local function updateESP()
 					local tracer = espTracers[targetPlayer]
 					if onScreen then
 						tracer.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
-						tracer.To = screenPos
+						tracer.To = bottomScreenPos
 						tracer.Visible = true
 					else
 						tracer.Visible = false
@@ -292,18 +309,18 @@ local function updateESP()
 					
 					local box = espBoxes[targetPlayer]
 					if onScreen then
-						local head = character:FindFirstChild("Head")
-						if head then
-							local headPos = worldToScreen(head.Position + Vector3.new(0, 0.5, 0))
-							local legPos = worldToScreen(humanoidRootPart.Position - Vector3.new(0, 3, 0))
-							
-							local height = math.abs(headPos.Y - legPos.Y)
-							local width = height / 2
-							
-							box.Size = Vector2.new(width, height)
-							box.Position = Vector2.new(screenPos.X - width / 2, headPos.Y)
-							box.Visible = true
-						end
+						-- Calculate box dimensions based on screen positions
+						local height = math.abs(topScreenPos.Y - bottomScreenPos.Y)
+						local width = height / 2
+						
+						-- Ensure minimum size
+						height = math.max(height, 20)
+						width = math.max(width, 10)
+						
+						-- Position the box centered on the character
+						box.Size = Vector2.new(width, height)
+						box.Position = Vector2.new(centerScreenPos.X - width / 2, topScreenPos.Y)
+						box.Visible = true
 					else
 						box.Visible = false
 					end
