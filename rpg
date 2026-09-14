@@ -460,15 +460,15 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	colorButton.Text = ""
 	colorButton.Parent = colorPreview
 	
-	-- Color wheel popup
+	-- Color wheel popup (attached to main frame side)
 	local colorWheel = Instance.new("Frame")
-	colorWheel.Size = UDim2.new(0, 280, 0, 380)
-	colorWheel.Position = UDim2.new(0.5, -140, 0.5, -190)
+	colorWheel.Size = UDim2.new(0, 0, 0, 340)
+	colorWheel.Position = UDim2.new(1, 5, 0, 0)
 	colorWheel.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 	colorWheel.BorderSizePixel = 0
 	colorWheel.Visible = false
 	colorWheel.ZIndex = 50
-	colorWheel.Parent = screenGui
+	colorWheel.Parent = mainFrame
 	
 	local wheelCorner = Instance.new("UICorner")
 	wheelCorner.CornerRadius = UDim.new(0, 12)
@@ -505,45 +505,75 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	-- Current RGB values
 	local currentR, currentG, currentB = math.floor(defaultColor.R * 255), math.floor(defaultColor.G * 255), math.floor(defaultColor.B * 255)
 	
-	-- Circular hue wheel
-	local hueWheelSize = 140
+	-- Circular hue wheel using ImageLabel with generated gradient
+	local hueWheelSize = 160
 	local hueWheelContainer = Instance.new("Frame")
 	hueWheelContainer.Size = UDim2.new(0, hueWheelSize, 0, hueWheelSize)
 	hueWheelContainer.Position = UDim2.new(0.5, -hueWheelSize/2, 0, 50)
-	hueWheelContainer.BackgroundTransparency = 1
+	hueWheelContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+	hueWheelContainer.BorderSizePixel = 0
 	hueWheelContainer.ZIndex = 51
 	hueWheelContainer.Parent = colorWheel
 	
-	-- Create circular hue wheel with segments
-	for i = 0, 359, 3 do
-		local hue = i / 360
+	local wheelBgCorner = Instance.new("UICorner")
+	wheelBgCorner.CornerRadius = UDim.new(1, 0)
+	wheelBgCorner.Parent = hueWheelContainer
+	
+	-- Create color wheel using multiple pie segments
+	local segments = 60
+	for i = 0, segments - 1 do
+		local angle1 = (i / segments) * 360
+		local angle2 = ((i + 1) / segments) * 360
+		local hue = i / segments
 		local color = Color3.fromHSV(hue, 1, 1)
 		
+		-- Create triangular segment
 		local segment = Instance.new("Frame")
-		segment.Size = UDim2.new(0, hueWheelSize, 0, 3)
+		segment.Size = UDim2.new(0, hueWheelSize / 2, 0, hueWheelSize / 2)
 		segment.Position = UDim2.new(0.5, 0, 0.5, 0)
-		segment.AnchorPoint = Vector2.new(0, 0.5)
+		segment.AnchorPoint = Vector2.new(0.5, 0.5)
 		segment.BackgroundColor3 = color
 		segment.BorderSizePixel = 0
-		segment.Rotation = i
+		segment.Rotation = angle1
 		segment.ZIndex = 51
 		segment.Parent = hueWheelContainer
 		
+		-- Gradient to make it radial
 		local gradient = Instance.new("UIGradient")
+		gradient.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+			ColorSequenceKeypoint.new(0.5, color),
+			ColorSequenceKeypoint.new(1, color)
+		}
 		gradient.Transparency = NumberSequence.new{
 			NumberSequenceKeypoint.new(0, 1),
 			NumberSequenceKeypoint.new(0.3, 0),
 			NumberSequenceKeypoint.new(1, 0)
 		}
+		gradient.Rotation = -angle1
 		gradient.Parent = segment
 	end
+	
+	-- Center hole
+	local centerHole = Instance.new("Frame")
+	centerHole.Size = UDim2.new(0, hueWheelSize * 0.5, 0, hueWheelSize * 0.5)
+	centerHole.Position = UDim2.new(0.5, 0, 0.5, 0)
+	centerHole.AnchorPoint = Vector2.new(0.5, 0.5)
+	centerHole.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+	centerHole.BorderSizePixel = 0
+	centerHole.ZIndex = 52
+	centerHole.Parent = hueWheelContainer
+	
+	local holeCorner = Instance.new("UICorner")
+	holeCorner.CornerRadius = UDim.new(1, 0)
+	holeCorner.Parent = centerHole
 	
 	-- Hue wheel button overlay
 	local hueButton = Instance.new("TextButton")
 	hueButton.Size = UDim2.new(1, 0, 1, 0)
 	hueButton.BackgroundTransparency = 1
 	hueButton.Text = ""
-	hueButton.ZIndex = 52
+	hueButton.ZIndex = 53
 	hueButton.Parent = hueWheelContainer
 	
 	-- RGB Sliders
@@ -556,7 +586,7 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		sliderFrame.Parent = colorWheel
 		
 		local label = Instance.new("TextLabel")
-		label.Size = UDim2.new(0, 30, 1, 0)
+		label.Size = UDim2.new(0, 15, 1, 0)
 		label.BackgroundTransparency = 1
 		label.Text = colorName
 		label.TextColor3 = Color3.fromRGB(240, 240, 245)
@@ -567,8 +597,8 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		label.Parent = sliderFrame
 		
 		local valueLabel = Instance.new("TextLabel")
-		valueLabel.Size = UDim2.new(0, 40, 1, 0)
-		valueLabel.Position = UDim2.new(1, -40, 0, 0)
+		valueLabel.Size = UDim2.new(0, 35, 1, 0)
+		valueLabel.Position = UDim2.new(1, -35, 0, 0)
 		valueLabel.BackgroundTransparency = 1
 		valueLabel.Text = tostring(defaultVal)
 		valueLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
@@ -579,8 +609,8 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		valueLabel.Parent = sliderFrame
 		
 		local sliderBg = Instance.new("Frame")
-		sliderBg.Size = UDim2.new(1, -80, 0, 8)
-		sliderBg.Position = UDim2.new(0, 35, 0.5, -4)
+		sliderBg.Size = UDim2.new(1, -60, 0, 8)
+		sliderBg.Position = UDim2.new(0, 25, 0.5, -4)
 		sliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 		sliderBg.BorderSizePixel = 0
 		sliderBg.ZIndex = 51
@@ -611,8 +641,8 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		sliderGradient.Parent = sliderBg
 		
 		local sliderButton = Instance.new("TextButton")
-		sliderButton.Size = UDim2.new(0, 14, 0, 14)
-		sliderButton.Position = UDim2.new(defaultVal / 255, -7, 0.5, -7)
+		sliderButton.Size = UDim2.new(0, 16, 0, 16)
+		sliderButton.Position = UDim2.new(defaultVal / 255, -8, 0.5, -8)
 		sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		sliderButton.BorderSizePixel = 0
 		sliderButton.Text = ""
@@ -634,26 +664,14 @@ local function createColorPicker(parent, text, defaultColor, callback)
 			local relativeX = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
 			local value = math.floor(relativeX * 255)
 			valueLabel.Text = tostring(value)
-			sliderButton.Position = UDim2.new(relativeX, -7, 0.5, -7)
+			sliderButton.Position = UDim2.new(relativeX, -8, 0.5, -8)
 			
 			if colorName == "R" then
 				currentR = value
-				sliderGradient.Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(0, currentG, currentB)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(255, currentG, currentB))
-				}
 			elseif colorName == "G" then
 				currentG = value
-				sliderGradient.Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, 0, currentB)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, 255, currentB))
-				}
 			else
 				currentB = value
-				sliderGradient.Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, currentG, 0)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, currentG, 255))
-				}
 			end
 			
 			if updateCallback then
@@ -707,9 +725,9 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		if callback then callback(newColor) end
 	end
 	
-	local rGradient = createRGBSlider("R", 210, currentR, updateColorPreview)
-	local gGradient = createRGBSlider("G", 250, currentG, updateColorPreview)
-	local bGradient = createRGBSlider("B", 290, currentB, updateColorPreview)
+	createRGBSlider("R", 225, currentR, updateColorPreview)
+	createRGBSlider("G", 265, currentG, updateColorPreview)
+	createRGBSlider("B", 305, currentB, updateColorPreview)
 	
 	-- Hue wheel click handler
 	local conn = hueButton.MouseButton1Click:Connect(function()
@@ -721,8 +739,11 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		local deltaY = mousePos.Y - centerY
 		local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
 		
-		-- Only respond if clicked within outer ring
-		if distance > hueWheelSize / 4 and distance < hueWheelSize / 2 then
+		-- Only respond if clicked within ring (not center hole)
+		local innerRadius = hueWheelSize * 0.25
+		local outerRadius = hueWheelSize * 0.5
+		
+		if distance > innerRadius and distance < outerRadius then
 			local angle = math.atan2(deltaY, deltaX)
 			local hue = (math.deg(angle) + 360) % 360 / 360
 			local selectedColor = Color3.fromHSV(hue, 1, 1)
@@ -730,20 +751,6 @@ local function createColorPicker(parent, text, defaultColor, callback)
 			currentR = math.floor(selectedColor.R * 255)
 			currentG = math.floor(selectedColor.G * 255)
 			currentB = math.floor(selectedColor.B * 255)
-			
-			-- Update all gradients
-			rGradient.Color = ColorSequence.new{
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(0, currentG, currentB)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(255, currentG, currentB))
-			}
-			gGradient.Color = ColorSequence.new{
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, 0, currentB)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, 255, currentB))
-			}
-			bGradient.Color = ColorSequence.new{
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(currentR, currentG, 0)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(currentR, currentG, 255))
-			}
 			
 			updateColorPreview()
 		end
@@ -753,23 +760,22 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	local conn1 = colorButton.MouseButton1Click:Connect(function()
 		if not colorWheel.Visible then
 			colorWheel.Visible = true
-			colorWheel.Size = UDim2.new(0, 0, 0, 0)
-			TweenService:Create(colorWheel, TweenInfo.new(0.3, Enum.EasingStyle.Back), 
-				{Size = UDim2.new(0, 280, 0, 380)}):Play()
+			TweenService:Create(colorWheel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+				{Size = UDim2.new(0, 250, 0, 340)}):Play()
 		else
-			TweenService:Create(colorWheel, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+			TweenService:Create(colorWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
+				{Size = UDim2.new(0, 0, 0, 340)}):Play()
 			task.wait(0.2)
 			colorWheel.Visible = false
-			colorWheel.Size = UDim2.new(0, 280, 0, 380)
 		end
 	end)
 	table.insert(connections, conn1)
 	
 	local conn2 = closeWheelBtn.MouseButton1Click:Connect(function()
-		TweenService:Create(colorWheel, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+		TweenService:Create(colorWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
+			{Size = UDim2.new(0, 0, 0, 340)}):Play()
 		task.wait(0.2)
 		colorWheel.Visible = false
-		colorWheel.Size = UDim2.new(0, 280, 0, 380)
 	end)
 	table.insert(connections, conn2)
 	
