@@ -774,20 +774,50 @@ end)
 local mouseContent = createTabContent("Mouse")
 
 local catMouseEnabled = false
-local catMouseIcon = "rbxassetid://0" -- Will be set to the gif URL
+local catCursorGui = nil
+local catCursorConnection = nil
 
 createToggle(mouseContent, "Cat Mouse", catMouseEnabled, function(enabled)
 	catMouseEnabled = enabled
 	
 	if enabled then
-		-- Change mouse cursor to cat gif
-		local mouse = player:GetMouse()
-		mouse.Icon = "https://cdn.discordapp.com/attachments/1432976966876925966/1458576267631661066/968DEC4B-F07E-4179-8719-C3295CA89EA6.gif?ex=6aa86a01&is=6aa71881&hm=7f6b97b133584bc7c1d861c1ec1581e5b68e3b4a6ab91c746d07fb489ec61918&"
+		-- Create custom cursor GUI
+		catCursorGui = Instance.new("ImageLabel")
+		catCursorGui.Name = "CatCursor"
+		catCursorGui.Size = UDim2.new(0, 64, 0, 64)
+		catCursorGui.BackgroundTransparency = 1
+		catCursorGui.Image = "https://cdn.discordapp.com/attachments/1432976966876925966/1458576267631661066/968DEC4B-F07E-4179-8719-C3295CA89EA6.gif"
+		catCursorGui.ZIndex = 1000
+		catCursorGui.Parent = screenGui
+		
+		-- Hide default cursor
+		UserInputService.MouseIconEnabled = false
+		
+		-- Follow mouse position
+		catCursorConnection = RunService.RenderStepped:Connect(function()
+			if catCursorGui and catMouseEnabled then
+				local mousePos = UserInputService:GetMouseLocation()
+				catCursorGui.Position = UDim2.new(0, mousePos.X - 32, 0, mousePos.Y - 32)
+			end
+		end)
+		
+		table.insert(connections, catCursorConnection)
 		print("Cat Mouse enabled!")
 	else
-		-- Reset to default cursor
-		local mouse = player:GetMouse()
-		mouse.Icon = ""
+		-- Remove custom cursor
+		if catCursorGui then
+			catCursorGui:Destroy()
+			catCursorGui = nil
+		end
+		
+		-- Disconnect update loop
+		if catCursorConnection then
+			catCursorConnection:Disconnect()
+			catCursorConnection = nil
+		end
+		
+		-- Show default cursor
+		UserInputService.MouseIconEnabled = true
 		print("Cat Mouse disabled!")
 	end
 end)
