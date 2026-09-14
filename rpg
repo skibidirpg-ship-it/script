@@ -885,7 +885,7 @@ createToggle(mouseContent, "Custom Image Cursor", customCursorEnabled, function(
 		customCursorGui.Name = "CustomCursor"
 		customCursorGui.Size = UDim2.new(0, 64, 0, 64)
 		customCursorGui.BackgroundTransparency = 1
-		customCursorGui.Image = "rbxassetid://16553257117"
+		customCursorGui.Image = "rbxassetid://17125895402"
 		customCursorGui.BorderSizePixel = 0
 		customCursorGui.ZIndex = 1000
 		customCursorGui.Parent = screenGui
