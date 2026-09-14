@@ -429,64 +429,6 @@ end
 -- Visuals Tab Content
 local visualsContent = createTabContent("Visuals")
 
-createToggle(visualsContent, "Aimbot", false, function(enabled)
-	print("Aimbot:", enabled)
-end)
-
-createToggle(visualsContent, "War Sign", false, function(enabled)
-	print("War Sign:", enabled)
-end)
-
-createToggle(visualsContent, "Visibility", false, function(enabled)
-	print("Visibility:", enabled)
-end)
-
-createDropdown(visualsContent, "Name Display Type", {"Always", "OnHover", "Never"}, "Always")
-
-createToggle(visualsContent, "Bounding box", false, function(enabled)
-	print("Bounding box:", enabled)
-end)
-
-createToggle(visualsContent, "Display Name", false, function(enabled)
-	print("Display Name:", enabled)
-end)
-
-createToggle(visualsContent, "Distance Measurement", false, function(enabled)
-	print("Distance Measurement:", enabled)
-end)
-
-createToggle(visualsContent, "Shaders", false, function(enabled)
-	print("Shaders:", enabled)
-end)
-
-createToggle(visualsContent, "Chams Text", false, function(enabled)
-	print("Chams Text:", enabled)
-end)
-
-createToggle(visualsContent, "Highlight", false, function(enabled)
-	print("Highlight:", enabled)
-end)
-
-createToggle(visualsContent, "Dynamic HealthGUI", false, function(enabled)
-	print("Dynamic HealthGUI:", enabled)
-end)
-
-createToggle(visualsContent, "Blend", false, function(enabled)
-	print("Blend:", enabled)
-end)
-
-createToggle(visualsContent, "Knock Check", false, function(enabled)
-	print("Knock Check:", enabled)
-end)
-
-createToggle(visualsContent, "Group Whitelist", false, function(enabled)
-	print("Group Whitelist:", enabled)
-end)
-
-createSlider(visualsContent, "Team ID: Speed", 0, 10, 5, function(value)
-	print("Team ID Speed:", value)
-end)
-
 createToggle(visualsContent, "ESP Boxes", espEnabled, function(enabled)
 	espEnabled = enabled
 	print("ESP Boxes:", enabled)
@@ -497,22 +439,21 @@ createToggle(visualsContent, "Tracers", tracersEnabled, function(enabled)
 	print("Tracers:", enabled)
 end)
 
--- Combat Tab
-local combatContent = createTabContent("Combat")
-createToggle(combatContent, "Auto Fire", false, nil)
-createToggle(combatContent, "Silent Aim", false, nil)
-createSlider(combatContent, "FOV Size", 50, 500, 200, nil)
-
 -- Other tabs (placeholders)
+createTabContent("Combat")
 createTabContent("Select Aim")
 createTabContent("Rage")
 createTabContent("Settings")
 
--- Make GUI draggable
+-- Make GUI draggable AND resizable
 local dragging
 local dragInput
 local dragStart
 local startPos
+
+local resizing
+local resizeStart
+local startSize
 
 local function updateDrag(input)
 	local delta = input.Position - dragStart
@@ -545,6 +486,55 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
+-- Resize handle (bottom-right corner)
+local resizeHandle = Instance.new("Frame")
+resizeHandle.Name = "ResizeHandle"
+resizeHandle.Size = UDim2.new(0, 15, 0, 15)
+resizeHandle.Position = UDim2.new(1, -15, 1, -15)
+resizeHandle.BackgroundTransparency = 1
+resizeHandle.Parent = mainFrame
+
+local resizeIndicator = Instance.new("TextLabel")
+resizeIndicator.Size = UDim2.new(1, 0, 1, 0)
+resizeIndicator.BackgroundTransparency = 1
+resizeIndicator.Text = "⋰"
+resizeIndicator.TextColor3 = Color3.fromRGB(100, 100, 100)
+resizeIndicator.TextSize = 16
+resizeIndicator.Font = Enum.Font.GothamBold
+resizeIndicator.Rotation = 90
+resizeIndicator.Parent = resizeHandle
+
+resizeHandle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		resizing = true
+		resizeStart = input.Position
+		startSize = mainFrame.Size
+		startPos = mainFrame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				resizing = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - resizeStart
+		local newWidth = math.max(260, startSize.X.Offset + delta.X)
+		local newHeight = math.max(300, startSize.Y.Offset + delta.Y)
+		mainFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
+		
+		-- Update tab widths
+		local tabWidth = newWidth / #tabs
+		for i, tabName in ipairs(tabs) do
+			tabButtons[tabName].Size = UDim2.new(0, tabWidth, 1, 0)
+			tabButtons[tabName].Position = UDim2.new(0, (i - 1) * tabWidth, 0, 0)
+		end
+	end
+end)
+
 -- ============================================
 -- ESP SYSTEM
 -- ============================================
@@ -555,6 +545,7 @@ local function createESPForPlayer(targetPlayer)
 	espFolder.Name = "ESP_" .. targetPlayer.Name
 	espFolder.Parent = screenGui
 	
+	-- ESP box lines (NO ROUNDED CORNERS)
 	local topLine = Instance.new("Frame")
 	topLine.BackgroundColor3 = espColor
 	topLine.BorderSizePixel = 0
@@ -579,10 +570,10 @@ local function createESPForPlayer(targetPlayer)
 	rightLine.ZIndex = 10
 	rightLine.Parent = espFolder
 	
+	-- Tracer line (NO ROUNDED CORNERS)
 	local tracerLine = Instance.new("Frame")
 	tracerLine.BackgroundColor3 = tracerColor
 	tracerLine.BorderSizePixel = 0
-	tracerLine.AnchorPoint = Vector2.new(0, 0.5)
 	tracerLine.ZIndex = 9
 	tracerLine.Parent = espFolder
 	
@@ -663,17 +654,26 @@ local function updateESP()
 						end
 						
 						if tracersEnabled then
+							-- Fixed tracer: draw from bottom center to player's feet
 							local startX = camera.ViewportSize.X / 2
 							local startY = camera.ViewportSize.Y
 							local endX = footScreenPos.X
 							local endY = footScreenPos.Y
+							
+							-- Calculate midpoint for positioning
+							local midX = (startX + endX) / 2
+							local midY = (startY + endY) / 2
+							
+							-- Calculate distance and angle
 							local deltaX = endX - startX
 							local deltaY = endY - startY
 							local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
 							local angle = math.deg(math.atan2(deltaY, deltaX))
 							
-							data.tracer.Position = UDim2.new(0, startX, 0, startY)
+							-- Position at midpoint, rotate towards target
 							data.tracer.Size = UDim2.new(0, distance, 0, 2)
+							data.tracer.Position = UDim2.new(0, midX, 0, midY)
+							data.tracer.AnchorPoint = Vector2.new(0.5, 0.5)
 							data.tracer.Rotation = angle
 						end
 					else
