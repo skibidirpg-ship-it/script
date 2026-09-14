@@ -232,7 +232,7 @@ tabBar.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
 tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
 
-local tabs = {"Visuals", "Mouse", "Settings"}
+local tabs = {"Visuals", "Player", "Settings"}
 local currentTab = "Visuals"
 local tabButtons = {}
 local tabWidth = 280 / #tabs
@@ -770,130 +770,526 @@ createColorPicker(visualsContent, "Tracer Color", tracerColor, function(color)
 	end
 end)
 
--- Mouse Tab
-local mouseContent = createTabContent("Mouse")
+-- Player Tab
+local playerContent = createTabContent("Player")
 
-local catMouseEnabled = false
-local catCursorGui = nil
-local catCursorConnection = nil
+-- Spinbot
+local spinbotEnabled = false
+local spinbotSpeed = 10
+local spinbotConnection = nil
+local spinbotSlider = nil
 
-createToggle(mouseContent, "Spinning Star Cursor", catMouseEnabled, function(enabled)
-	catMouseEnabled = enabled
+local spinbotToggle = createToggle(playerContent, "Spinbot", spinbotEnabled, function(enabled)
+	spinbotEnabled = enabled
 	
 	if enabled then
-		-- Create custom cursor GUI with spinning star
-		catCursorGui = Instance.new("Frame")
-		catCursorGui.Name = "StarCursor"
-		catCursorGui.Size = UDim2.new(0, 48, 0, 48)
-		catCursorGui.BackgroundTransparency = 1
-		catCursorGui.BorderSizePixel = 0
-		catCursorGui.ZIndex = 1000
-		catCursorGui.Parent = screenGui
+		-- Show slider
+		if spinbotSlider then
+			spinbotSlider.Visible = true
+			TweenService:Create(spinbotSlider, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+				{Size = UDim2.new(1, -10, 0, 50)}):Play()
+		end
 		
-		-- Star emoji
-		local starEmoji = Instance.new("TextLabel")
-		starEmoji.Size = UDim2.new(1, 0, 1, 0)
-		starEmoji.BackgroundTransparency = 1
-		starEmoji.Text = "⭐"
-		starEmoji.TextSize = 48
-		starEmoji.ZIndex = 1001
-		starEmoji.Parent = catCursorGui
-		
-		-- Animate spinning
-		task.spawn(function()
-			local rotation = 0
-			while catCursorGui and catMouseEnabled do
-				rotation = rotation + 5
-				if rotation >= 360 then rotation = 0 end
-				starEmoji.Rotation = rotation
-				task.wait(0.03)
+		-- Start spinning
+		spinbotConnection = RunService.RenderStepped:Connect(function()
+			if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+				local hrp = player.Character.HumanoidRootPart
+				hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinbotSpeed), 0)
 			end
 		end)
 		
-		-- Hide default cursor
-		UserInputService.MouseIconEnabled = false
-		
-		-- Follow mouse position
-		catCursorConnection = RunService.RenderStepped:Connect(function()
-			if catCursorGui and catMouseEnabled then
-				local mousePos = UserInputService:GetMouseLocation()
-				catCursorGui.Position = UDim2.new(0, mousePos.X - 24, 0, mousePos.Y - 24)
-			end
-		end)
-		
-		table.insert(connections, catCursorConnection)
-		print("Spinning Star Cursor enabled!")
+		table.insert(connections, spinbotConnection)
+		print("✅ Spinbot enabled!")
 	else
-		-- Remove custom cursor
-		if catCursorGui then
-			catCursorGui:Destroy()
-			catCursorGui = nil
+		-- Hide slider
+		if spinbotSlider then
+			TweenService:Create(spinbotSlider, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
+				{Size = UDim2.new(1, -10, 0, 0)}):Play()
+			task.wait(0.2)
+			spinbotSlider.Visible = false
 		end
 		
-		-- Disconnect update loop
-		if catCursorConnection then
-			catCursorConnection:Disconnect()
-			catCursorConnection = nil
+		-- Stop spinning
+		if spinbotConnection then
+			spinbotConnection:Disconnect()
+			spinbotConnection = nil
 		end
-		
-		-- Show default cursor
-		UserInputService.MouseIconEnabled = true
-		print("Spinning Star Cursor disabled!")
+		print("❌ Spinbot disabled!")
 	end
 end)
 
-local catMouseInfo = Instance.new("TextLabel")
-catMouseInfo.Size = UDim2.new(1, -10, 0, 50)
-catMouseInfo.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
-catMouseInfo.BorderSizePixel = 0
-catMouseInfo.Text = "⭐ Changes your cursor to a spinning star!"
-catMouseInfo.TextColor3 = Color3.fromRGB(200, 200, 210)
-catMouseInfo.TextSize = 10
-catMouseInfo.Font = Enum.Font.Gotham
-catMouseInfo.TextWrapped = true
-catMouseInfo.TextYAlignment = Enum.TextYAlignment.Top
-catMouseInfo.Parent = mouseContent
+-- Spinbot slider
+spinbotSlider = Instance.new("Frame")
+spinbotSlider.Size = UDim2.new(1, -10, 0, 0)
+spinbotSlider.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
+spinbotSlider.BorderSizePixel = 0
+spinbotSlider.Visible = false
+spinbotSlider.Parent = playerContent
 
-local mouseInfoCorner = Instance.new("UICorner")
-mouseInfoCorner.CornerRadius = UDim.new(0, 8)
-mouseInfoCorner.Parent = catMouseInfo
+local spinbotCorner = Instance.new("UICorner")
+spinbotCorner.CornerRadius = UDim.new(0, 8)
+spinbotCorner.Parent = spinbotSlider
 
-local mouseInfoStroke = Instance.new("UIStroke")
-mouseInfoStroke.Color = Color3.fromRGB(50, 50, 60)
-mouseInfoStroke.Thickness = 1
-mouseInfoStroke.Transparency = 0.5
-mouseInfoStroke.Parent = catMouseInfo
+local spinbotStroke = Instance.new("UIStroke")
+spinbotStroke.Color = Color3.fromRGB(50, 50, 60)
+spinbotStroke.Thickness = 1
+spinbotStroke.Transparency = 0.5
+spinbotStroke.Parent = spinbotSlider
 
-local mouseInfoPadding = Instance.new("UIPadding")
-mouseInfoPadding.PaddingTop = UDim.new(0, 10)
-mouseInfoPadding.PaddingLeft = UDim.new(0, 10)
-mouseInfoPadding.PaddingRight = UDim.new(0, 10)
-mouseInfoPadding.PaddingBottom = UDim.new(0, 10)
-mouseInfoPadding.Parent = catMouseInfo
+local spinbotLabel = Instance.new("TextLabel")
+spinbotLabel.Size = UDim2.new(0.5, 0, 0, 25)
+spinbotLabel.Position = UDim2.new(0, 12, 0, 8)
+spinbotLabel.BackgroundTransparency = 1
+spinbotLabel.Text = "Speed"
+spinbotLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+spinbotLabel.TextSize = 11
+spinbotLabel.Font = Enum.Font.Gotham
+spinbotLabel.TextXAlignment = Enum.TextXAlignment.Left
+spinbotLabel.Parent = spinbotSlider
 
--- Second cursor option with asset
-local customCursorEnabled = false
-local customCursorGui = nil
-local customCursorConnection = nil
+local spinbotValue = Instance.new("TextLabel")
+spinbotValue.Size = UDim2.new(0.5, -12, 0, 25)
+spinbotValue.Position = UDim2.new(0.5, 0, 0, 8)
+spinbotValue.BackgroundTransparency = 1
+spinbotValue.Text = tostring(spinbotSpeed)
+spinbotValue.TextColor3 = Color3.fromRGB(138, 43, 226)
+spinbotValue.TextSize = 11
+spinbotValue.Font = Enum.Font.GothamBold
+spinbotValue.TextXAlignment = Enum.TextXAlignment.Right
+spinbotValue.Parent = spinbotSlider
 
-createToggle(mouseContent, "Custom Image Cursor", customCursorEnabled, function(enabled)
-	customCursorEnabled = enabled
+local spinbotSliderBg = Instance.new("Frame")
+spinbotSliderBg.Size = UDim2.new(1, -24, 0, 6)
+spinbotSliderBg.Position = UDim2.new(0, 12, 1, -16)
+spinbotSliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+spinbotSliderBg.BorderSizePixel = 0
+spinbotSliderBg.Parent = spinbotSlider
+
+local spinbotSliderCorner = Instance.new("UICorner")
+spinbotSliderCorner.CornerRadius = UDim.new(1, 0)
+spinbotSliderCorner.Parent = spinbotSliderBg
+
+local spinbotSliderBtn = Instance.new("TextButton")
+spinbotSliderBtn.Size = UDim2.new(0, 14, 0, 14)
+spinbotSliderBtn.Position = UDim2.new((spinbotSpeed - 1) / 49, -7, 0.5, -7)
+spinbotSliderBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+spinbotSliderBtn.BorderSizePixel = 0
+spinbotSliderBtn.Text = ""
+spinbotSliderBtn.Parent = spinbotSliderBg
+
+local spinbotBtnCorner = Instance.new("UICorner")
+spinbotBtnCorner.CornerRadius = UDim.new(1, 0)
+spinbotBtnCorner.Parent = spinbotSliderBtn
+
+local draggingSpinbot = false
+
+local function updateSpinbot(input)
+	local relativeX = math.clamp((input.Position.X - spinbotSliderBg.AbsolutePosition.X) / spinbotSliderBg.AbsoluteSize.X, 0, 1)
+	spinbotSpeed = math.floor(relativeX * 49 + 1)
+	spinbotValue.Text = tostring(spinbotSpeed)
+	spinbotSliderBtn.Position = UDim2.new(relativeX, -7, 0.5, -7)
+end
+
+spinbotSliderBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSpinbot = true
+	end
+end)
+
+spinbotSliderBtn.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSpinbot = false
+	end
+end)
+
+spinbotSliderBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSpinbot = true
+		updateSpinbot(input)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if draggingSpinbot and input.UserInputType == Enum.UserInputType.MouseMovement then
+		updateSpinbot(input)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSpinbot = false
+	end
+end)
+
+-- Walkspeed
+local walkspeedEnabled = false
+local walkspeedValue = 16
+local originalWalkspeed = 16
+local walkspeedSlider = nil
+
+local walkspeedToggle = createToggle(playerContent, "Walkspeed", walkspeedEnabled, function(enabled)
+	walkspeedEnabled = enabled
 	
 	if enabled then
-		-- Create custom cursor GUI with Roblox asset
-		customCursorGui = Instance.new("ImageLabel")
-		customCursorGui.Name = "CustomCursor"
-		customCursorGui.Size = UDim2.new(0, 64, 0, 64)
-		customCursorGui.BackgroundTransparency = 1
-		customCursorGui.Image = "rbxassetid://17125895402"
-		customCursorGui.BorderSizePixel = 0
-		customCursorGui.ZIndex = 1000
-		customCursorGui.Parent = screenGui
+		-- Show slider
+		if walkspeedSlider then
+			walkspeedSlider.Visible = true
+			TweenService:Create(walkspeedSlider, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+				{Size = UDim2.new(1, -10, 0, 50)}):Play()
+		end
 		
-		-- Animate spinning
-		task.spawn(function()
-			local rotation = 0
-			while customCursorGui and customCursorEnabled do
+		-- Apply walkspeed
+		if player.Character and player.Character:FindFirstChild("Humanoid") then
+			local humanoid = player.Character.Humanoid
+			originalWalkspeed = humanoid.WalkSpeed
+			humanoid.WalkSpeed = walkspeedValue
+		end
+		print("✅ Walkspeed enabled!")
+	else
+		-- Hide slider
+		if walkspeedSlider then
+			TweenService:Create(walkspeedSlider, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
+				{Size = UDim2.new(1, -10, 0, 0)}):Play()
+			task.wait(0.2)
+			walkspeedSlider.Visible = false
+		end
+		
+		-- Reset walkspeed
+		if player.Character and player.Character:FindFirstChild("Humanoid") then
+			player.Character.Humanoid.WalkSpeed = originalWalkspeed
+		end
+		print("❌ Walkspeed disabled!")
+	end
+end)
+
+-- Walkspeed slider
+walkspeedSlider = Instance.new("Frame")
+walkspeedSlider.Size = UDim2.new(1, -10, 0, 0)
+walkspeedSlider.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
+walkspeedSlider.BorderSizePixel = 0
+walkspeedSlider.Visible = false
+walkspeedSlider.Parent = playerContent
+
+local walkspeedCorner = Instance.new("UICorner")
+walkspeedCorner.CornerRadius = UDim.new(0, 8)
+walkspeedCorner.Parent = walkspeedSlider
+
+local walkspeedStroke = Instance.new("UIStroke")
+walkspeedStroke.Color = Color3.fromRGB(50, 50, 60)
+walkspeedStroke.Thickness = 1
+walkspeedStroke.Transparency = 0.5
+walkspeedStroke.Parent = walkspeedSlider
+
+local walkspeedLabel = Instance.new("TextLabel")
+walkspeedLabel.Size = UDim2.new(0.5, 0, 0, 25)
+walkspeedLabel.Position = UDim2.new(0, 12, 0, 8)
+walkspeedLabel.BackgroundTransparency = 1
+walkspeedLabel.Text = "Speed"
+walkspeedLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+walkspeedLabel.TextSize = 11
+walkspeedLabel.Font = Enum.Font.Gotham
+walkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+walkspeedLabel.Parent = walkspeedSlider
+
+local walkspeedValueLabel = Instance.new("TextLabel")
+walkspeedValueLabel.Size = UDim2.new(0.5, -12, 0, 25)
+walkspeedValueLabel.Position = UDim2.new(0.5, 0, 0, 8)
+walkspeedValueLabel.BackgroundTransparency = 1
+walkspeedValueLabel.Text = tostring(walkspeedValue)
+walkspeedValueLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+walkspeedValueLabel.TextSize = 11
+walkspeedValueLabel.Font = Enum.Font.GothamBold
+walkspeedValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+walkspeedValueLabel.Parent = walkspeedSlider
+
+local walkspeedSliderBg = Instance.new("Frame")
+walkspeedSliderBg.Size = UDim2.new(1, -24, 0, 6)
+walkspeedSliderBg.Position = UDim2.new(0, 12, 1, -16)
+walkspeedSliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+walkspeedSliderBg.BorderSizePixel = 0
+walkspeedSliderBg.Parent = walkspeedSlider
+
+local walkspeedSliderCorner = Instance.new("UICorner")
+walkspeedSliderCorner.CornerRadius = UDim.new(1, 0)
+walkspeedSliderCorner.Parent = walkspeedSliderBg
+
+local walkspeedSliderBtn = Instance.new("TextButton")
+walkspeedSliderBtn.Size = UDim2.new(0, 14, 0, 14)
+walkspeedSliderBtn.Position = UDim2.new((walkspeedValue - 16) / 484, -7, 0.5, -7)
+walkspeedSliderBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+walkspeedSliderBtn.BorderSizePixel = 0
+walkspeedSliderBtn.Text = ""
+walkspeedSliderBtn.Parent = walkspeedSliderBg
+
+local walkspeedBtnCorner = Instance.new("UICorner")
+walkspeedBtnCorner.CornerRadius = UDim.new(1, 0)
+walkspeedBtnCorner.Parent = walkspeedSliderBtn
+
+local draggingWalkspeed = false
+
+local function updateWalkspeed(input)
+	local relativeX = math.clamp((input.Position.X - walkspeedSliderBg.AbsolutePosition.X) / walkspeedSliderBg.AbsoluteSize.X, 0, 1)
+	walkspeedValue = math.floor(relativeX * 484 + 16)
+	walkspeedValueLabel.Text = tostring(walkspeedValue)
+	walkspeedSliderBtn.Position = UDim2.new(relativeX, -7, 0.5, -7)
+	
+	if walkspeedEnabled and player.Character and player.Character:FindFirstChild("Humanoid") then
+		player.Character.Humanoid.WalkSpeed = walkspeedValue
+	end
+end
+
+walkspeedSliderBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingWalkspeed = true
+	end
+end)
+
+walkspeedSliderBtn.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingWalkspeed = false
+	end
+end)
+
+walkspeedSliderBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingWalkspeed = true
+		updateWalkspeed(input)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if draggingWalkspeed and input.UserInputType == Enum.UserInputType.MouseMovement then
+		updateWalkspeed(input)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingWalkspeed = false
+	end
+end)
+
+-- Fly
+local flyEnabled = false
+local flySpeed = 50
+local flyConnection = nil
+local flySlider = nil
+local flying = false
+local flyVelocity = nil
+local flyGyro = nil
+
+local flyToggle = createToggle(playerContent, "Fly", flyEnabled, function(enabled)
+	flyEnabled = enabled
+	
+	if enabled then
+		-- Show slider
+		if flySlider then
+			flySlider.Visible = true
+			TweenService:Create(flySlider, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+				{Size = UDim2.new(1, -10, 0, 50)}):Play()
+		end
+		
+		-- Enable flying
+		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = player.Character.HumanoidRootPart
+			
+			-- Create BodyVelocity
+			flyVelocity = Instance.new("BodyVelocity")
+			flyVelocity.MaxForce = Vector3.new(0, 0, 0)
+			flyVelocity.Velocity = Vector3.new(0, 0, 0)
+			flyVelocity.Parent = hrp
+			
+			-- Create BodyGyro
+			flyGyro = Instance.new("BodyGyro")
+			flyGyro.MaxTorque = Vector3.new(0, 0, 0)
+			flyGyro.P = 9000
+			flyGyro.Parent = hrp
+			
+			flying = true
+			
+			flyConnection = RunService.RenderStepped:Connect(function()
+				if flying and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+					local hrp = player.Character.HumanoidRootPart
+					local humanoid = player.Character:FindFirstChild("Humanoid")
+					
+					if humanoid then
+						humanoid.PlatformStand = true
+					end
+					
+					local moveDirection = Vector3.new(0, 0, 0)
+					
+					if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+						moveDirection = moveDirection + (camera.CFrame.LookVector * flySpeed)
+					end
+					if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+						moveDirection = moveDirection - (camera.CFrame.LookVector * flySpeed)
+					end
+					if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+						moveDirection = moveDirection - (camera.CFrame.RightVector * flySpeed)
+					end
+					if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+						moveDirection = moveDirection + (camera.CFrame.RightVector * flySpeed)
+					end
+					if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+						moveDirection = moveDirection + Vector3.new(0, flySpeed, 0)
+					end
+					if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+						moveDirection = moveDirection - Vector3.new(0, flySpeed, 0)
+					end
+					
+					if flyVelocity then
+						flyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+						flyVelocity.Velocity = moveDirection
+					end
+					
+					if flyGyro then
+						flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+						flyGyro.CFrame = camera.CFrame
+					end
+				end
+			end)
+			
+			table.insert(connections, flyConnection)
+		end
+		
+		print("✅ Fly enabled!")
+	else
+		-- Hide slider
+		if flySlider then
+			TweenService:Create(flySlider, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
+				{Size = UDim2.new(1, -10, 0, 0)}):Play()
+			task.wait(0.2)
+			flySlider.Visible = false
+		end
+		
+		-- Disable flying
+		flying = false
+		
+		if flyConnection then
+			flyConnection:Disconnect()
+			flyConnection = nil
+		end
+		
+		if flyVelocity then
+			flyVelocity:Destroy()
+			flyVelocity = nil
+		end
+		
+		if flyGyro then
+			flyGyro:Destroy()
+			flyGyro = nil
+		end
+		
+		if player.Character and player.Character:FindFirstChild("Humanoid") then
+			player.Character.Humanoid.PlatformStand = false
+		end
+		
+		print("❌ Fly disabled!")
+	end
+end)
+
+-- Fly slider
+flySlider = Instance.new("Frame")
+flySlider.Size = UDim2.new(1, -10, 0, 0)
+flySlider.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
+flySlider.BorderSizePixel = 0
+flySlider.Visible = false
+flySlider.Parent = playerContent
+
+local flyCorner = Instance.new("UICorner")
+flyCorner.CornerRadius = UDim.new(0, 8)
+flyCorner.Parent = flySlider
+
+local flyStroke = Instance.new("UIStroke")
+flyStroke.Color = Color3.fromRGB(50, 50, 60)
+flyStroke.Thickness = 1
+flyStroke.Transparency = 0.5
+flyStroke.Parent = flySlider
+
+local flyLabel = Instance.new("TextLabel")
+flyLabel.Size = UDim2.new(0.5, 0, 0, 25)
+flyLabel.Position = UDim2.new(0, 12, 0, 8)
+flyLabel.BackgroundTransparency = 1
+flyLabel.Text = "Speed"
+flyLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+flyLabel.TextSize = 11
+flyLabel.Font = Enum.Font.Gotham
+flyLabel.TextXAlignment = Enum.TextXAlignment.Left
+flyLabel.Parent = flySlider
+
+local flyValueLabel = Instance.new("TextLabel")
+flyValueLabel.Size = UDim2.new(0.5, -12, 0, 25)
+flyValueLabel.Position = UDim2.new(0.5, 0, 0, 8)
+flyValueLabel.BackgroundTransparency = 1
+flyValueLabel.Text = tostring(flySpeed)
+flyValueLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+flyValueLabel.TextSize = 11
+flyValueLabel.Font = Enum.Font.GothamBold
+flyValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+flyValueLabel.Parent = flySlider
+
+local flySliderBg = Instance.new("Frame")
+flySliderBg.Size = UDim2.new(1, -24, 0, 6)
+flySliderBg.Position = UDim2.new(0, 12, 1, -16)
+flySliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+flySliderBg.BorderSizePixel = 0
+flySliderBg.Parent = flySlider
+
+local flySliderCorner = Instance.new("UICorner")
+flySliderCorner.CornerRadius = UDim.new(1, 0)
+flySliderCorner.Parent = flySliderBg
+
+local flySliderBtn = Instance.new("TextButton")
+flySliderBtn.Size = UDim2.new(0, 14, 0, 14)
+flySliderBtn.Position = UDim2.new((flySpeed - 10) / 290, -7, 0.5, -7)
+flySliderBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+flySliderBtn.BorderSizePixel = 0
+flySliderBtn.Text = ""
+flySliderBtn.Parent = flySliderBg
+
+local flyBtnCorner = Instance.new("UICorner")
+flyBtnCorner.CornerRadius = UDim.new(1, 0)
+flyBtnCorner.Parent = flySliderBtn
+
+local draggingFly = false
+
+local function updateFly(input)
+	local relativeX = math.clamp((input.Position.X - flySliderBg.AbsolutePosition.X) / flySliderBg.AbsoluteSize.X, 0, 1)
+	flySpeed = math.floor(relativeX * 290 + 10)
+	flyValueLabel.Text = tostring(flySpeed)
+	flySliderBtn.Position = UDim2.new(relativeX, -7, 0.5, -7)
+end
+
+flySliderBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingFly = true
+	end
+end)
+
+flySliderBtn.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingFly = false
+	end
+end)
+
+flySliderBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingFly = true
+		updateFly(input)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if draggingFly and input.UserInputType == Enum.UserInputType.MouseMovement then
+		updateFly(input)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingFly = false
+	end
+end)abled do
 				rotation = rotation + 5
 				if rotation >= 360 then rotation = 0 end
 				customCursorGui.Rotation = rotation
