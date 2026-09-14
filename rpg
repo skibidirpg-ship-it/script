@@ -505,58 +505,38 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	-- Current RGB values
 	local currentR, currentG, currentB = math.floor(defaultColor.R * 255), math.floor(defaultColor.G * 255), math.floor(defaultColor.B * 255)
 	
-	-- Circular hue wheel using ImageLabel with generated gradient
+	-- Circular hue wheel using proper method
 	local hueWheelSize = 160
 	local hueWheelContainer = Instance.new("Frame")
 	hueWheelContainer.Size = UDim2.new(0, hueWheelSize, 0, hueWheelSize)
 	hueWheelContainer.Position = UDim2.new(0.5, -hueWheelSize/2, 0, 50)
-	hueWheelContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+	hueWheelContainer.BackgroundTransparency = 1
 	hueWheelContainer.BorderSizePixel = 0
 	hueWheelContainer.ZIndex = 51
 	hueWheelContainer.Parent = colorWheel
 	
-	local wheelBgCorner = Instance.new("UICorner")
-	wheelBgCorner.CornerRadius = UDim.new(1, 0)
-	wheelBgCorner.Parent = hueWheelContainer
-	
-	-- Create color wheel using multiple pie segments
-	local segments = 60
-	for i = 0, segments - 1 do
-		local angle1 = (i / segments) * 360
-		local angle2 = ((i + 1) / segments) * 360
-		local hue = i / segments
+	-- Create radial color segments (like a pie chart)
+	local numSegments = 360
+	for i = 0, numSegments - 1 do
+		local hue = i / numSegments
 		local color = Color3.fromHSV(hue, 1, 1)
+		local angle = (i / numSegments) * 360
 		
-		-- Create triangular segment
+		-- Create a thin line segment from center outward
 		local segment = Instance.new("Frame")
-		segment.Size = UDim2.new(0, hueWheelSize / 2, 0, hueWheelSize / 2)
+		segment.Size = UDim2.new(0, hueWheelSize / 2, 0, 2)
 		segment.Position = UDim2.new(0.5, 0, 0.5, 0)
-		segment.AnchorPoint = Vector2.new(0.5, 0.5)
+		segment.AnchorPoint = Vector2.new(0, 0.5)
 		segment.BackgroundColor3 = color
 		segment.BorderSizePixel = 0
-		segment.Rotation = angle1
+		segment.Rotation = angle
 		segment.ZIndex = 51
 		segment.Parent = hueWheelContainer
-		
-		-- Gradient to make it radial
-		local gradient = Instance.new("UIGradient")
-		gradient.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-			ColorSequenceKeypoint.new(0.5, color),
-			ColorSequenceKeypoint.new(1, color)
-		}
-		gradient.Transparency = NumberSequence.new{
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(0.3, 0),
-			NumberSequenceKeypoint.new(1, 0)
-		}
-		gradient.Rotation = -angle1
-		gradient.Parent = segment
 	end
 	
-	-- Center hole
+	-- Cover center with a hole
 	local centerHole = Instance.new("Frame")
-	centerHole.Size = UDim2.new(0, hueWheelSize * 0.5, 0, hueWheelSize * 0.5)
+	centerHole.Size = UDim2.new(0, hueWheelSize * 0.4, 0, hueWheelSize * 0.4)
 	centerHole.Position = UDim2.new(0.5, 0, 0.5, 0)
 	centerHole.AnchorPoint = Vector2.new(0.5, 0.5)
 	centerHole.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
@@ -739,13 +719,17 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		local deltaY = mousePos.Y - centerY
 		local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
 		
-		-- Only respond if clicked within ring (not center hole)
-		local innerRadius = hueWheelSize * 0.25
+		-- Only respond if clicked within ring (between inner and outer radius)
+		local innerRadius = hueWheelSize * 0.2
 		local outerRadius = hueWheelSize * 0.5
 		
-		if distance > innerRadius and distance < outerRadius then
+		if distance >= innerRadius and distance <= outerRadius then
+			-- Calculate angle from mouse position
 			local angle = math.atan2(deltaY, deltaX)
-			local hue = (math.deg(angle) + 360) % 360 / 360
+			local degrees = math.deg(angle)
+			if degrees < 0 then degrees = degrees + 360 end
+			
+			local hue = degrees / 360
 			local selectedColor = Color3.fromHSV(hue, 1, 1)
 			
 			currentR = math.floor(selectedColor.R * 255)
