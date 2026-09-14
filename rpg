@@ -871,6 +871,97 @@ mouseInfoPadding.PaddingRight = UDim.new(0, 10)
 mouseInfoPadding.PaddingBottom = UDim.new(0, 10)
 mouseInfoPadding.Parent = catMouseInfo
 
+-- Second cursor option with asset
+local customCursorEnabled = false
+local customCursorGui = nil
+local customCursorConnection = nil
+
+createToggle(mouseContent, "Custom Image Cursor", customCursorEnabled, function(enabled)
+	customCursorEnabled = enabled
+	
+	if enabled then
+		-- Create custom cursor GUI with Roblox asset
+		customCursorGui = Instance.new("ImageLabel")
+		customCursorGui.Name = "CustomCursor"
+		customCursorGui.Size = UDim2.new(0, 64, 0, 64)
+		customCursorGui.BackgroundTransparency = 1
+		customCursorGui.Image = "rbxassetid://16553257117"
+		customCursorGui.BorderSizePixel = 0
+		customCursorGui.ZIndex = 1000
+		customCursorGui.Parent = screenGui
+		
+		-- Animate spinning
+		task.spawn(function()
+			local rotation = 0
+			while customCursorGui and customCursorEnabled do
+				rotation = rotation + 5
+				if rotation >= 360 then rotation = 0 end
+				customCursorGui.Rotation = rotation
+				task.wait(0.03)
+			end
+		end)
+		
+		-- Hide default cursor
+		UserInputService.MouseIconEnabled = false
+		
+		-- Follow mouse position
+		customCursorConnection = RunService.RenderStepped:Connect(function()
+			if customCursorGui and customCursorEnabled then
+				local mousePos = UserInputService:GetMouseLocation()
+				customCursorGui.Position = UDim2.new(0, mousePos.X - 32, 0, mousePos.Y - 32)
+			end
+		end)
+		
+		table.insert(connections, customCursorConnection)
+		print("Custom Image Cursor enabled!")
+	else
+		-- Remove custom cursor
+		if customCursorGui then
+			customCursorGui:Destroy()
+			customCursorGui = nil
+		end
+		
+		-- Disconnect update loop
+		if customCursorConnection then
+			customCursorConnection:Disconnect()
+			customCursorConnection = nil
+		end
+		
+		-- Show default cursor
+		UserInputService.MouseIconEnabled = true
+		print("Custom Image Cursor disabled!")
+	end
+end)
+
+local customCursorInfo = Instance.new("TextLabel")
+customCursorInfo.Size = UDim2.new(1, -10, 0, 50)
+customCursorInfo.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+customCursorInfo.BorderSizePixel = 0
+customCursorInfo.Text = "🎨 Uses a custom Roblox asset as your cursor!"
+customCursorInfo.TextColor3 = Color3.fromRGB(200, 200, 210)
+customCursorInfo.TextSize = 10
+customCursorInfo.Font = Enum.Font.Gotham
+customCursorInfo.TextWrapped = true
+customCursorInfo.TextYAlignment = Enum.TextYAlignment.Top
+customCursorInfo.Parent = mouseContent
+
+local customInfoCorner = Instance.new("UICorner")
+customInfoCorner.CornerRadius = UDim.new(0, 8)
+customInfoCorner.Parent = customCursorInfo
+
+local customInfoStroke = Instance.new("UIStroke")
+customInfoStroke.Color = Color3.fromRGB(50, 50, 60)
+customInfoStroke.Thickness = 1
+customInfoStroke.Transparency = 0.5
+customInfoStroke.Parent = customCursorInfo
+
+local customInfoPadding = Instance.new("UIPadding")
+customInfoPadding.PaddingTop = UDim.new(0, 10)
+customInfoPadding.PaddingLeft = UDim.new(0, 10)
+customInfoPadding.PaddingRight = UDim.new(0, 10)
+customInfoPadding.PaddingBottom = UDim.new(0, 10)
+customInfoPadding.Parent = customCursorInfo
+
 -- Settings Tab
 local settingsContent = createTabContent("Settings")
 
