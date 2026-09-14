@@ -49,7 +49,7 @@ local loadingTitle = Instance.new("TextLabel")
 loadingTitle.Size = UDim2.new(0, 600, 0, 100)
 loadingTitle.Position = UDim2.new(0.5, -300, 0.4, -50)
 loadingTitle.BackgroundTransparency = 1
-loadingTitle.Text = "RPG CLIENT"
+loadingTitle.Text = "focus"
 loadingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 loadingTitle.TextSize = 72
 loadingTitle.Font = Enum.Font.GothamBold
@@ -182,7 +182,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "RPG Client"
+titleLabel.Text = "focus"
 titleLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
 titleLabel.TextSize = 14
 titleLabel.Font = Enum.Font.GothamBold
@@ -211,7 +211,7 @@ local function killSwitch()
 	for _, obj in ipairs(objectsToCleanup) do
 		if obj and obj.Parent then obj:Destroy() end
 	end
-	print("✅ Kill switch activated - All cleaned up")
+	print("kill switch")
 end
 
 closeButton.MouseButton1Click:Connect(killSwitch)
