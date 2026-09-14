@@ -1,6 +1,3 @@
--- Advanced Roblox GUI with ESP Tracers
--- Place this script in StarterGui or StarterPlayerScripts
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
