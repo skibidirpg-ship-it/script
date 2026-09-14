@@ -250,6 +250,35 @@ local function removeESP(player)
 	end
 end
 
+local function getCharacterBounds(character)
+	-- Get all parts of the character to calculate true bounds
+	local parts = {}
+	for _, part in pairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			table.insert(parts, part)
+		end
+	end
+	
+	if #parts == 0 then return nil end
+	
+	-- Find the highest and lowest points
+	local minY = math.huge
+	local maxY = -math.huge
+	
+	for _, part in pairs(parts) do
+		local size = part.Size
+		local position = part.Position
+		
+		local top = position.Y + (size.Y / 2)
+		local bottom = position.Y - (size.Y / 2)
+		
+		if top > maxY then maxY = top end
+		if bottom < minY then minY = bottom end
+	end
+	
+	return minY, maxY
+end
+
 local function updateESP()
 	if not espEnabled and not tracersEnabled then return end
 	
@@ -258,71 +287,71 @@ local function updateESP()
 			local character = targetPlayer.Character
 			local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 			local humanoid = character:FindFirstChild("Humanoid")
-			local head = character:FindFirstChild("Head")
 			
-			if humanoidRootPart and humanoid and humanoid.Health > 0 and head then
-				-- Calculate the 3D bounding box corners
-				local hrpPosition = humanoidRootPart.Position
-				local headPosition = head.Position
+			if humanoidRootPart and humanoid and humanoid.Health > 0 then
+				-- Get the actual character bounds
+				local minY, maxY = getCharacterBounds(character)
 				
-				-- Get the distance for proper scaling
-				local distance = (camera.CFrame.Position - hrpPosition).Magnitude
-				local scaleFactor = 1 / distance * 100 -- Adjust this multiplier for size
-				
-				-- Calculate actual character bounds
-				local topPosition = headPosition + Vector3.new(0, 0.5, 0)
-				local bottomPosition = hrpPosition - Vector3.new(0, 3, 0)
-				
-				-- Convert to screen space
-				local topScreenPos, topOnScreen, topDepth = worldToScreen(topPosition)
-				local bottomScreenPos, bottomOnScreen, bottomDepth = worldToScreen(bottomPosition)
-				local centerScreenPos, centerOnScreen = worldToScreen(hrpPosition)
-				
-				local onScreen = topOnScreen and bottomOnScreen and topDepth > 0 and bottomDepth > 0
-				
-				-- Update Tracer
-				if tracersEnabled then
-					if not espTracers[targetPlayer] then
-						createTracer(targetPlayer)
+				if minY and maxY then
+					local hrpPosition = humanoidRootPart.Position
+					
+					-- Create the top and bottom positions using actual bounds
+					local topPosition = Vector3.new(hrpPosition.X, maxY, hrpPosition.Z)
+					local bottomPosition = Vector3.new(hrpPosition.X, minY, hrpPosition.Z)
+					
+					-- Convert to screen space
+					local topScreenPos, topOnScreen, topDepth = worldToScreen(topPosition)
+					local bottomScreenPos, bottomOnScreen, bottomDepth = worldToScreen(bottomPosition)
+					local centerScreenPos, centerOnScreen = worldToScreen(hrpPosition)
+					
+					local onScreen = topOnScreen and bottomOnScreen and topDepth > 0 and bottomDepth > 0
+					
+					-- Update Tracer
+					if tracersEnabled then
+						if not espTracers[targetPlayer] then
+							createTracer(targetPlayer)
+						end
+						
+						local tracer = espTracers[targetPlayer]
+						if onScreen then
+							tracer.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+							tracer.To = bottomScreenPos
+							tracer.Visible = true
+						else
+							tracer.Visible = false
+						end
+					elseif espTracers[targetPlayer] then
+						espTracers[targetPlayer].Visible = false
 					end
 					
-					local tracer = espTracers[targetPlayer]
-					if onScreen then
-						tracer.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
-						tracer.To = bottomScreenPos
-						tracer.Visible = true
-					else
-						tracer.Visible = false
-					end
-				elseif espTracers[targetPlayer] then
-					espTracers[targetPlayer].Visible = false
-				end
-				
-				-- Update ESP Box
-				if espEnabled then
-					if not espBoxes[targetPlayer] then
-						createESPBox(targetPlayer)
-					end
-					
-					local box = espBoxes[targetPlayer]
-					if onScreen then
-						-- Calculate box dimensions based on screen positions
-						local height = math.abs(topScreenPos.Y - bottomScreenPos.Y)
-						local width = height / 2
+					-- Update ESP Box
+					if espEnabled then
+						if not espBoxes[targetPlayer] then
+							createESPBox(targetPlayer)
+						end
 						
-						-- Ensure minimum size
-						height = math.max(height, 20)
-						width = math.max(width, 10)
-						
-						-- Position the box centered on the character
-						box.Size = Vector2.new(width, height)
-						box.Position = Vector2.new(centerScreenPos.X - width / 2, topScreenPos.Y)
-						box.Visible = true
-					else
-						box.Visible = false
+						local box = espBoxes[targetPlayer]
+						if onScreen then
+							-- Calculate box dimensions based on screen positions
+							local height = math.abs(topScreenPos.Y - bottomScreenPos.Y)
+							local width = height / 2
+							
+							-- Ensure minimum size
+							height = math.max(height, 20)
+							width = math.max(width, 10)
+							
+							-- Position the box - use topScreenPos.Y for the top edge
+							box.Size = Vector2.new(width, height)
+							box.Position = Vector2.new(centerScreenPos.X - width / 2, topScreenPos.Y)
+							box.Visible = true
+						else
+							box.Visible = false
+						end
+					elseif espBoxes[targetPlayer] then
+						espBoxes[targetPlayer].Visible = false
 					end
-				elseif espBoxes[targetPlayer] then
-					espBoxes[targetPlayer].Visible = false
+				else
+					removeESP(targetPlayer)
 				end
 			else
 				removeESP(targetPlayer)
