@@ -460,9 +460,9 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	colorButton.Text = ""
 	colorButton.Parent = colorPreview
 	
-	-- Color wheel popup (attached to main frame side)
+	-- Color picker panel (attached to main frame side)
 	local colorWheel = Instance.new("Frame")
-	colorWheel.Size = UDim2.new(0, 0, 0, 340)
+	colorWheel.Size = UDim2.new(0, 0, 0, 180)
 	colorWheel.Position = UDim2.new(1, 5, 0, 0)
 	colorWheel.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 	colorWheel.BorderSizePixel = 0
@@ -483,7 +483,7 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	wheelTitle.Size = UDim2.new(1, -50, 0, 40)
 	wheelTitle.Position = UDim2.new(0, 15, 0, 0)
 	wheelTitle.BackgroundTransparency = 1
-	wheelTitle.Text = "Choose Color"
+	wheelTitle.Text = "RGB Color"
 	wheelTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
 	wheelTitle.TextSize = 14
 	wheelTitle.Font = Enum.Font.GothamBold
@@ -504,57 +504,6 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	
 	-- Current RGB values
 	local currentR, currentG, currentB = math.floor(defaultColor.R * 255), math.floor(defaultColor.G * 255), math.floor(defaultColor.B * 255)
-	
-	-- Circular hue wheel using proper method
-	local hueWheelSize = 160
-	local hueWheelContainer = Instance.new("Frame")
-	hueWheelContainer.Size = UDim2.new(0, hueWheelSize, 0, hueWheelSize)
-	hueWheelContainer.Position = UDim2.new(0.5, -hueWheelSize/2, 0, 50)
-	hueWheelContainer.BackgroundTransparency = 1
-	hueWheelContainer.BorderSizePixel = 0
-	hueWheelContainer.ZIndex = 51
-	hueWheelContainer.Parent = colorWheel
-	
-	-- Create radial color segments (like a pie chart)
-	local numSegments = 360
-	for i = 0, numSegments - 1 do
-		local hue = i / numSegments
-		local color = Color3.fromHSV(hue, 1, 1)
-		local angle = (i / numSegments) * 360
-		
-		-- Create a thin line segment from center outward
-		local segment = Instance.new("Frame")
-		segment.Size = UDim2.new(0, hueWheelSize / 2, 0, 2)
-		segment.Position = UDim2.new(0.5, 0, 0.5, 0)
-		segment.AnchorPoint = Vector2.new(0, 0.5)
-		segment.BackgroundColor3 = color
-		segment.BorderSizePixel = 0
-		segment.Rotation = angle
-		segment.ZIndex = 51
-		segment.Parent = hueWheelContainer
-	end
-	
-	-- Cover center with a hole
-	local centerHole = Instance.new("Frame")
-	centerHole.Size = UDim2.new(0, hueWheelSize * 0.4, 0, hueWheelSize * 0.4)
-	centerHole.Position = UDim2.new(0.5, 0, 0.5, 0)
-	centerHole.AnchorPoint = Vector2.new(0.5, 0.5)
-	centerHole.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
-	centerHole.BorderSizePixel = 0
-	centerHole.ZIndex = 52
-	centerHole.Parent = hueWheelContainer
-	
-	local holeCorner = Instance.new("UICorner")
-	holeCorner.CornerRadius = UDim.new(1, 0)
-	holeCorner.Parent = centerHole
-	
-	-- Hue wheel button overlay
-	local hueButton = Instance.new("TextButton")
-	hueButton.Size = UDim2.new(1, 0, 1, 0)
-	hueButton.BackgroundTransparency = 1
-	hueButton.Text = ""
-	hueButton.ZIndex = 53
-	hueButton.Parent = hueWheelContainer
 	
 	-- RGB Sliders
 	local function createRGBSlider(colorName, yPos, defaultVal, updateCallback)
@@ -705,50 +654,18 @@ local function createColorPicker(parent, text, defaultColor, callback)
 		if callback then callback(newColor) end
 	end
 	
-	createRGBSlider("R", 225, currentR, updateColorPreview)
-	createRGBSlider("G", 265, currentG, updateColorPreview)
-	createRGBSlider("B", 305, currentB, updateColorPreview)
-	
-	-- Hue wheel click handler
-	local conn = hueButton.MouseButton1Click:Connect(function()
-		local mousePos = UserInputService:GetMouseLocation()
-		local centerX = hueWheelContainer.AbsolutePosition.X + hueWheelSize / 2
-		local centerY = hueWheelContainer.AbsolutePosition.Y + hueWheelSize / 2
-		
-		local deltaX = mousePos.X - centerX
-		local deltaY = mousePos.Y - centerY
-		local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
-		
-		-- Only respond if clicked within ring (between inner and outer radius)
-		local innerRadius = hueWheelSize * 0.2
-		local outerRadius = hueWheelSize * 0.5
-		
-		if distance >= innerRadius and distance <= outerRadius then
-			-- Calculate angle from mouse position
-			local angle = math.atan2(deltaY, deltaX)
-			local degrees = math.deg(angle)
-			if degrees < 0 then degrees = degrees + 360 end
-			
-			local hue = degrees / 360
-			local selectedColor = Color3.fromHSV(hue, 1, 1)
-			
-			currentR = math.floor(selectedColor.R * 255)
-			currentG = math.floor(selectedColor.G * 255)
-			currentB = math.floor(selectedColor.B * 255)
-			
-			updateColorPreview()
-		end
-	end)
-	table.insert(connections, conn)
+	createRGBSlider("R", 50, currentR, updateColorPreview)
+	createRGBSlider("G", 90, currentG, updateColorPreview)
+	createRGBSlider("B", 130, currentB, updateColorPreview)
 	
 	local conn1 = colorButton.MouseButton1Click:Connect(function()
 		if not colorWheel.Visible then
 			colorWheel.Visible = true
 			TweenService:Create(colorWheel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
-				{Size = UDim2.new(0, 250, 0, 340)}):Play()
+				{Size = UDim2.new(0, 250, 0, 180)}):Play()
 		else
 			TweenService:Create(colorWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
-				{Size = UDim2.new(0, 0, 0, 340)}):Play()
+				{Size = UDim2.new(0, 0, 0, 180)}):Play()
 			task.wait(0.2)
 			colorWheel.Visible = false
 		end
@@ -757,7 +674,7 @@ local function createColorPicker(parent, text, defaultColor, callback)
 	
 	local conn2 = closeWheelBtn.MouseButton1Click:Connect(function()
 		TweenService:Create(colorWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), 
-			{Size = UDim2.new(0, 0, 0, 340)}):Play()
+			{Size = UDim2.new(0, 0, 0, 180)}):Play()
 		task.wait(0.2)
 		colorWheel.Visible = false
 	end)
